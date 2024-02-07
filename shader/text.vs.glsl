@@ -18,5 +18,5 @@ void main() {
 
     vec2 texture_size = vec2(textureSize(sprite_texture, 0));
     texture_coordinate = source_position + vec2(vertex_position.x * source_size.x, vertex_position.y * source_size.y);
-    texture_coordinate = vec2(texture_coordinate.x / texture_size.x, (texture_size.y - texture_coordinate.y) / texture_size.y);
+    texture_coordinate = vec2(texture_coordinate.x / texture_size.x, 1.0 - ((texture_size.y - texture_coordinate.y) / texture_size.y));
 }

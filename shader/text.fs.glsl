@@ -3,10 +3,9 @@
 in vec2 texture_coordinate;
 out vec4 color;
 
-uniform vec2 source_position;
-uniform vec2 source_size;
 uniform sampler2D sprite_texture;
+uniform vec3 text_color;
 
 void main() {
-    color = texture(sprite_texture, texture_coordinate);
+    color = vec4(text_color, texture(sprite_texture, texture_coordinate).r);
 }

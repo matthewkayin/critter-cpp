@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <string>
 #include <fstream>
+#include <vector>
 
 namespace matthewkayin::engine {
     static SDL_Window* window;
@@ -33,7 +34,8 @@ namespace matthewkayin::engine {
     static GLuint screen_framebuffer;
     static GLuint screen_texture;
 
-    static Shader screen_shader;
+    static Shader sprite_shader;
+    static Shader text_shader;
 
     bool init(const char* title, unsigned int _screen_width, unsigned int _screen_height) {
         /* Setup SDL  */
@@ -88,14 +90,13 @@ namespace matthewkayin::engine {
         /* Setup Quad VAO */
 
         float quad_vertices[] = {
-            // positions   // texCoords
-            -1.0f,  1.0f,  0.0f, 1.0f,
-            -1.0f, -1.0f,  0.0f, 0.0f,
-            1.0f, -1.0f,  1.0f, 0.0f,
+            0.0f, 0.0f,
+            1.0f, 0.0f,
+            0.0f, 1.0f,
 
-            -1.0f,  1.0f,  0.0f, 1.0f,
-            1.0f, -1.0f,  1.0f, 0.0f,
-            1.0f,  1.0f,  1.0f, 1.0f
+            0.0f, 1.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f
         };
         GLuint quad_vbo;
 
@@ -106,9 +107,7 @@ namespace matthewkayin::engine {
         glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
         glBindVertexArray(0);
 
@@ -139,9 +138,17 @@ namespace matthewkayin::engine {
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        if (!screen_shader.load("./shader/screen.vs.glsl", "./shader/screen.fs.glsl")) {
+        if (!sprite_shader.load("./shader/screen.vs.glsl", "./shader/screen.fs.glsl")) {
             return false;
         }
+        sprite_shader.use();
+        sprite_shader.set_uniform("screen_size", vec2((float)screen_width, (float)screen_height));
+
+        if (!text_shader.load("./shader/text.vs.glsl", "./shader/text.fs.glsl")) {
+            return false;
+        }
+        text_shader.use();
+        text_shader.set_uniform("screen_size", vec2((float)screen_width, (float)screen_height));
 
         fps = 0;
         running = true;
@@ -250,6 +257,131 @@ namespace matthewkayin::engine {
         glUseProgram(id);
     }
 
+    void Shader::set_uniform(const char* name, unsigned int value) {
+        glUniform1ui(glGetUniformLocation(id, name), value);
+    }
+
+    void Shader::set_uniform(const char* name, vec2 value) {
+        glUniform2fv(glGetUniformLocation(id, name), 1, value.value_ptr());
+    }
+
+    void Shader::set_uniform(const char* name, Color value) {
+        glUniform3fv(glGetUniformLocation(id, name), 1, value.value_ptr());
+    }
+
+    /* Font functions */
+
+    static const int FIRST_CHAR = 32;
+
+    struct Font {
+        GLuint atlas;
+        unsigned int glyph_width;
+        unsigned int glyph_height;
+    };
+    static std::vector<Font> fonts;
+
+    int next_largest_power_of_two(int number) {
+        int power_of_two = 1;
+        while (power_of_two < number) {
+            power_of_two *= 2;
+        }
+
+        return power_of_two;
+    }
+
+    int load_font(const char* path, unsigned int size) {
+        static const SDL_Color SDL_COLOR_WHITE = { 255, 255, 255, 255 };
+
+        // Load the font
+        TTF_Font* ttf_font = TTF_OpenFont(path, size);
+        if (ttf_font == NULL) {
+            printf("Unable to open font at path %s. SDL Error: %s\n", path, TTF_GetError());
+            return RESOURCE_LOAD_FAILED;
+        }
+
+        // Render each glyph to a surface
+        SDL_Surface* glyphs[96];
+        int max_width;
+        int max_height;
+        for (int i = 0; i < 96; i++) {
+            char text[2] = { (char)(i + FIRST_CHAR), '\0' };
+            glyphs[i] = TTF_RenderText_Solid(ttf_font, text, SDL_COLOR_WHITE);
+            if (glyphs[i] == NULL) {
+                return RESOURCE_LOAD_FAILED;
+            }
+
+            if (i == 0 || max_width < glyphs[i]->w) {
+                max_width = glyphs[i]->w;
+            }
+            if (i == 0 || max_height < glyphs[i]->h) {
+                max_height = glyphs[i]->h;
+            }
+        }
+
+        int atlas_width = next_largest_power_of_two(max_width * 96);
+        int atlas_height = next_largest_power_of_two(max_height);
+        SDL_Surface* atlas_surface = SDL_CreateRGBSurface(0, atlas_width, atlas_height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+        for (int i = 0; i < 96; i++) {
+            SDL_Rect dest_rect = {  max_width * i, 0, glyphs[i]->w, glyphs[i]->h };
+            SDL_BlitSurface(glyphs[i], NULL, atlas_surface, &dest_rect);
+        }
+
+        Font font;
+
+        // Generate OpenGL texture
+        glGenTextures(1, &font.atlas);
+        glBindTexture(GL_TEXTURE_2D, font.atlas);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas_width, atlas_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, atlas_surface->pixels);
+
+        // Finish setting up font struct
+        font.glyph_width = (unsigned int)max_width;
+        font.glyph_height = (unsigned int)max_height;
+
+        // Cleanup
+        glBindTexture(GL_TEXTURE_2D, 0);
+        for (int i = 0; i < 96; i++) {
+            SDL_FreeSurface(glyphs[i]);
+        }
+        SDL_FreeSurface(atlas_surface);
+        TTF_CloseFont(ttf_font);
+
+        // Determine font ID and insert it into font store
+        fonts.push_back(font);
+        return fonts.size() - 1;
+    }
+
+    void render_text(int font_id, std::string text, vec2 position, Color color) {
+        Font font = fonts[font_id];
+
+        text_shader.use();
+        text_shader.set_uniform("sprite_texture", 0);
+        text_shader.set_uniform("text_color", color);
+        text_shader.set_uniform("source_size", vec2((float)font.glyph_width, (float)font.glyph_height));
+        text_shader.set_uniform("dest_size", vec2((float)font.glyph_width, (float)font.glyph_height));
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, font.atlas);
+        glBindVertexArray(quad_vao);
+
+        vec2 render_position = position;
+        for (char c : text) {
+            int glyph_index = (int)c - FIRST_CHAR;
+            text_shader.set_uniform("source_position", vec2((float)(font.glyph_width * glyph_index), 0));
+            text_shader.set_uniform("dest_position", render_position);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            render_position.x += font.glyph_width;
+        }
+
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBlendFunc(GL_ONE, GL_ZERO);
+    }
+
     /* Render functions */
 
     void render_clear() {
@@ -270,7 +402,13 @@ namespace matthewkayin::engine {
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        screen_shader.use();
+        sprite_shader.use();
+        sprite_shader.set_uniform("sprite_texture", 0);
+        sprite_shader.set_uniform("source_position", vec2());
+        sprite_shader.set_uniform("source_size", vec2(screen_width, screen_height));
+        sprite_shader.set_uniform("dest_position", vec2());
+        sprite_shader.set_uniform("dest_size", vec2(screen_width, screen_height));
+
         glBindVertexArray(quad_vao);
         glBindTexture(GL_TEXTURE_2D, screen_texture);
         glDrawArrays(GL_TRIANGLES, 0, 6);
