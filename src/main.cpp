@@ -13,14 +13,19 @@ int main() {
         return -1;
     }
     engine::set_window_size(1280, 720);
-    int font_small = engine::load_font("./res/hack.ttf", 10);
+    engine::Font font_small;
+    font_small.load("./res/hack.ttf", 10);
+
+    engine::Sprite ant_sprite;
+    ant_sprite.load("./res/ant.png", 13, 3);
 
     while (engine::running) {
         engine::timekeep();
         engine::poll_events();
         engine::render_clear();
 
-        engine::render_text(font_small, "FPS: " + std::to_string(engine::fps), vec2(0.0f, 0.0f), engine::COLOR_WHITE);
+        ant_sprite.render(vec2(64, 64), 1, 1, true);
+        font_small.render("FPS: " + std::to_string(engine::fps), vec2(0.0f, 0.0f), engine::COLOR_WHITE);
 
         engine::render_flip();
     }

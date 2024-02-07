@@ -6,8 +6,6 @@
 #include <string>
 
 namespace matthewkayin::engine {
-    const int RESOURCE_LOAD_FAILED = -1;
-
     extern unsigned int screen_width;
     extern unsigned int screen_height;
 
@@ -48,14 +46,34 @@ namespace matthewkayin::engine {
 
         bool load(const char* vertex_path, const char* fragment_path);
         void use();
+        void set_uniform(const char* name, bool value);
         void set_uniform(const char* name, unsigned int value);
         void set_uniform(const char* name, vec2 value);
         void set_uniform(const char* name, Color value);
     };
 
     /* Font functions */
-    int load_font(const char* path, unsigned int size);
-    void render_text(int font_id, std::string text, vec2 position, Color color);
+    struct Font {
+        GLuint atlas;
+        unsigned int glyph_width;
+        unsigned int glyph_height;
+
+        bool load(const char* path, unsigned int size);
+        void render(std::string text, vec2 position, Color color);
+    };
+
+    /* Sprite functions */
+
+    struct Sprite {
+        GLuint texture;
+        unsigned int width;
+        unsigned int height;
+        unsigned int frame_width;
+        unsigned int frame_height;
+
+        bool load(const char* path, unsigned int hframes = 1, unsigned int vframes = 1);
+        void render(vec2 position, unsigned int hframe = 0, unsigned int vframe = 0, bool flip_h = false, bool flip_v = false);
+    };
 
     /* Rendering functions */
     void render_clear();
