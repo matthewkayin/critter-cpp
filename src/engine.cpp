@@ -7,7 +7,6 @@
 #include <cstdio>
 #include <string>
 #include <fstream>
-#include <vector>
 
 namespace matthewkayin::engine {
     static SDL_Window* window;
@@ -183,7 +182,7 @@ namespace matthewkayin::engine {
             current_time = SDL_GetTicks();
         }
 
-        delta = (float)(current_time - last_time) / 60.0f;
+        delta = (float)(current_time - last_time) / 1000.0f;
         last_time = current_time;
 
         if (current_time - last_second >= 1000) {
@@ -449,6 +448,43 @@ namespace matthewkayin::engine {
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindVertexArray(0);
+    }
+
+    void Sprite::register_animation(unsigned int animation_name, int fps, const std::initializer_list<ivec2> &frames) {
+        animation_data[animation_name] = (AnimationData) {
+            .frames = frames,
+            .frame_duration = 1.0f / (float)fps
+        };
+    }
+
+    SpriteAnimation::SpriteAnimation(Sprite* sprite) {
+        this->sprite = sprite;
+        frame = 0;
+        animation = 0;
+        flip_h = false;
+        flip_v = false;
+        timer = 0.0f;
+    }
+
+    void SpriteAnimation::update(float delta) {
+        const Sprite::AnimationData& current_animation = sprite->animation_data.at(animation);
+
+        timer += delta;
+        if (timer >= current_animation.frame_duration) {
+            timer -= current_animation.frame_duration;
+            frame = (frame + 1) % current_animation.frames.size();
+        }
+    }
+
+    void SpriteAnimation::set_animation(unsigned int animation_name) {
+        animation = animation_name;
+        frame = 0;
+        timer = 0.0f;
+    }
+
+    void SpriteAnimation::render(vec2 position) {
+        ivec2 sprite_frame = sprite->animation_data[animation].frames[frame];
+        sprite->render(position, sprite_frame.x, sprite_frame.y, flip_h, flip_v);
     }
 
     /* Render functions */

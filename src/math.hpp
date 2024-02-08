@@ -1,6 +1,22 @@
 #pragma once
 
 namespace matthewkayin {
+    struct ivec2 {
+        int x;
+        int y;
+        ivec2() {
+            x = 0;
+            y  =0;
+        }
+        ivec2(int x, int y) {
+            this->x = x;
+            this->y = y;
+        }
+        int* value_ptr() {
+            return &x;
+        }
+    };
+
     struct vec2 {
         float x;
         float y;
