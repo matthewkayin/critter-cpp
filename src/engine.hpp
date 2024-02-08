@@ -48,6 +48,7 @@ namespace matthewkayin::engine {
         GLuint id;
 
         bool load(const char* vertex_path, const char* fragment_path);
+        bool load_sprite_shader(const char* fragment_path);
         void use();
         void set_uniform(const char* name, bool value);
         void set_uniform(const char* name, unsigned int value);
@@ -82,6 +83,7 @@ namespace matthewkayin::engine {
 
         bool load(const char* path, unsigned int hframes = 1, unsigned int vframes = 1);
         void render(vec2 position, unsigned int hframe = 0, unsigned int vframe = 0, bool flip_h = false, bool flip_v = false);
+        void render(Shader& shader, vec2 position, unsigned int hframe = 0, unsigned int vframe = 0, bool flip_h = false, bool flip_v = false);
         void register_animation(unsigned int animation_name, int fps, const std::initializer_list<ivec2> &frames); 
     };
 
@@ -98,6 +100,7 @@ namespace matthewkayin::engine {
         void update(float delta);
         void set_animation(unsigned int animation);
         void render(vec2 position);
+        void render(Shader& shader, vec2 position);
     };
 
     /* Rendering functions */

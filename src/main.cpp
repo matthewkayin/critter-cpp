@@ -17,9 +17,18 @@ int main() {
     if (!engine::init("Critter Farm", 640, 360)) {
         return -1;
     }
+
     engine::set_window_size(1280, 720);
+
     engine::Font font_small;
-    font_small.load("./res/hack.ttf", 10);
+    if (!font_small.load("./res/hack.ttf", 10)) {
+        return false;
+    }
+
+    engine::Shader outline_shader;
+    if (!outline_shader.load_sprite_shader("./shader/outline.fs.glsl")) {
+        return false;
+    }
 
     engine::Sprite ant_sprite;
     ant_sprite.load("./res/ant.png", 13, 3);
@@ -38,8 +47,11 @@ int main() {
         ant_sprite_animation.update(engine::delta);
         ant_sprite_animation2.update(engine::delta);
 
-        ant_sprite_animation.render(vec2(64, 64));
-        ant_sprite_animation2.render(vec2(96, 64));
+        outline_shader.use();
+        outline_shader.set_uniform("show_outline", false);
+        ant_sprite_animation.render(outline_shader, vec2(64, 64));
+        outline_shader.set_uniform("show_outline", true);
+        ant_sprite_animation2.render(outline_shader, vec2(96, 64));
         font_small.render("FPS: " + std::to_string(engine::fps), vec2(0.0f, 0.0f), engine::COLOR_WHITE);
 
         engine::render_flip();

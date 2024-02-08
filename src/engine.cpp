@@ -259,6 +259,17 @@ namespace matthewkayin::engine {
         return true;
     }
 
+    bool Shader::load_sprite_shader(const char* fragment_path) {
+        if (!load("./shader/sprite.vs.glsl", fragment_path)) {
+            return false;
+        }
+
+        use();
+        sprite_shader.set_uniform("screen_size", vec2((float)screen_width, (float)screen_height));
+
+        return true;
+    }
+
     void Shader::use() {
         glUseProgram(id);
     }
@@ -424,6 +435,10 @@ namespace matthewkayin::engine {
     }
 
     void Sprite::render(vec2 position, unsigned int hframe, unsigned int vframe, bool flip_h, bool flip_v) {
+        render(sprite_shader, position, hframe, vframe, flip_h, flip_v);
+    }
+
+    void Sprite::render(Shader& shader, vec2 position, unsigned int hframe, unsigned int vframe, bool flip_h, bool flip_v) {
         vec2 source_position = vec2(frame_width * hframe, frame_height * vframe);
         if (source_position.x + frame_width > width || source_position.y + frame_height > height) {
             printf("Sprite frame %u,%u is out of bounds\n", hframe, vframe);
@@ -431,14 +446,14 @@ namespace matthewkayin::engine {
         }
         vec2 frame_size = vec2((float)frame_width, (float)frame_height);
 
-        sprite_shader.use();
-        sprite_shader.set_uniform("sprite_texture", (unsigned int)0);
-        sprite_shader.set_uniform("dest_position", position);
-        sprite_shader.set_uniform("dest_size", frame_size);
-        sprite_shader.set_uniform("source_position", source_position);
-        sprite_shader.set_uniform("source_size", frame_size);
-        sprite_shader.set_uniform("flip_h", flip_h);
-        sprite_shader.set_uniform("flip_v", flip_v);
+        shader.use();
+        shader.set_uniform("sprite_texture", (unsigned int)0);
+        shader.set_uniform("dest_position", position);
+        shader.set_uniform("dest_size", frame_size);
+        shader.set_uniform("source_position", source_position);
+        shader.set_uniform("source_size", frame_size);
+        shader.set_uniform("flip_h", flip_h);
+        shader.set_uniform("flip_v", flip_v);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -483,8 +498,12 @@ namespace matthewkayin::engine {
     }
 
     void SpriteAnimation::render(vec2 position) {
+        render(sprite_shader, position);
+    }
+
+    void SpriteAnimation::render(Shader& shader, vec2 position) {
         ivec2 sprite_frame = sprite->animation_data[animation].frames[frame];
-        sprite->render(position, sprite_frame.x, sprite_frame.y, flip_h, flip_v);
+        sprite->render(shader, position, sprite_frame.x, sprite_frame.y, flip_h, flip_v);
     }
 
     /* Render functions */
