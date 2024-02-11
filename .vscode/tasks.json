@@ -6,10 +6,17 @@
             "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
+                "-Wall",
+                "-std=c++11",
+                "-static-libstdc++",
+                "-Iinclude",
+                "-lSDL2",
+                "-lSDL2_image",
+                "-lSDL2_ttf",
                 "-g",
-                "${file}",
+                "${workspaceFolder}/src/*.cpp",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${workspaceFolder}/game.exe"
             ],
             "options": {
                 "cwd": "${fileDirname}"

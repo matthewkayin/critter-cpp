@@ -1,6 +1,6 @@
 #pragma once
 
-namespace matthewkayin {
+namespace siren {
     struct ivec2 {
         int x;
         int y;
