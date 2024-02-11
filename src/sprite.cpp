@@ -6,7 +6,7 @@
 
 using namespace siren;
 
-bool Sprite::load(const char* path, unsigned int hframes, unsigned int vframes) {
+bool Sprite::load(const char* path, Sprite::FrameSizeOption frame_size_option, unsigned int hframes, unsigned int vframes) {
     SDL_Surface* surface = IMG_Load(path);
     if (surface == nullptr) {
         printf("Failed to load image %s\n", path);
@@ -31,8 +31,13 @@ bool Sprite::load(const char* path, unsigned int hframes, unsigned int vframes) 
 
     width = surface->w;
     height = surface->h;
-    frame_width = width / hframes;
-    frame_height = height / vframes;
+    if (frame_size_option == SPECIFY_FRAME_COUNT) {
+        frame_width = width / hframes;
+        frame_height = height / vframes;
+    } else {
+        frame_width = hframes;
+        frame_height = vframes;
+    }
 
     glGenTextures(1, &texture);
     glActiveTexture(GL_TEXTURE0);

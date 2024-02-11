@@ -4,15 +4,28 @@
 #include "sprite.hpp"
 #include "font.hpp"
 
-extern siren::Font font_small;
+#include <unordered_map>
 
-extern siren::Shader outline_shader;
+using namespace siren;
+
+extern Font font_small;
+
+extern Shader outline_shader;
+
+enum Tile {
+    TILE_NONE,
+    TILE_DIRT,
+    TILE_WATER
+};
+
+extern std::unordered_map<Tile, ivec2> tile_atlas_frame;
+extern Sprite tileset;
 
 enum AntAnimation {
     ANT_ANIMATION_IDLE,
     ANT_ANIMATION_WALK
 };
 
-extern siren::Sprite ant_sprite;
+extern Sprite ant_sprite;
 
 bool resource_init();

@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <string>
 #include <fstream>
+#include <cmath>
 
 using namespace siren;
 
@@ -338,7 +339,7 @@ void Engine::render_sprite(const Sprite& sprite, vec2 position, unsigned int hfr
     vec2 frame_size = vec2((float)sprite.frame_width, (float)sprite.frame_height);
 
     set_shader_uniform("sprite_texture", (unsigned int)0);
-    set_shader_uniform("dest_position", position);
+    set_shader_uniform("dest_position", vec2(floorf(position.x), floorf(position.y)));
     set_shader_uniform("dest_size", frame_size);
     set_shader_uniform("source_position", source_position);
     set_shader_uniform("source_size", frame_size);

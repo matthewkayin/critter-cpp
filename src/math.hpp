@@ -1,35 +1,34 @@
 #pragma once
 
 namespace siren {
-    struct ivec2 {
-        int x;
-        int y;
-        ivec2() {
-            x = 0;
-            y  =0;
-        }
-        ivec2(int x, int y) {
+    template<typename T>
+    struct vec {
+        T x;
+        T y;
+
+        vec() {}
+        vec(T x, T y) {
             this->x = x;
             this->y = y;
         }
-        int* value_ptr() {
+        vec(const vec& other) {
+            x = other.x;
+            y = other.y;
+        }
+        T* value_ptr() {
             return &x;
+        }
+        vec operator+(const vec& other) const {
+            return vec(x + other.x, y + other.y);
+        }
+        vec operator-(const vec& other) const {
+            return vec(x - other.x, y - other.y);
+        }
+        vec operator*(const float scaler) const {
+            return vec(x * scaler, y * scaler);
         }
     };
 
-    struct vec2 {
-        float x;
-        float y;
-        vec2() {
-            x = 0.0f;
-            y = 0.0f;
-        }
-        vec2(float x, float y) {
-            this->x = x;
-            this->y = y;
-        }
-        float* value_ptr() {
-            return &x;
-        }
-    };
+    typedef vec<int> ivec2;
+    typedef vec<float> vec2;
 }
